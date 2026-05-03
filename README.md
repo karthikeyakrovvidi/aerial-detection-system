@@ -44,6 +44,3 @@ python streamer.py --source test_video.mp4
 - OpenCV
 - Python UDP Sockets
 - NumPy
-
-## 📸 Live Test
-![Live Test Screenshot](screenshot.png)
