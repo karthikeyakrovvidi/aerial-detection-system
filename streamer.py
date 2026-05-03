@@ -1,20 +1,3 @@
-"""
-streamer.py — Drone Side (Simulated)
-Project: aerial_detection_system
-
-This script simulates what runs ON the drone.
-It reads a video file (simulating the drone camera),
-runs YOLOv8 detection on each frame,
-and streams the annotated frames over UDP to the ground station.
-
-HOW TO USE:
-    1. First start receiver.py on the ground station (other terminal)
-    2. Then run this script:
-       python streamer.py --source test_video.mp4
-
-    Both scripts must run at the same time.
-    You can run both on the same Mac (two terminals) to simulate drone + ground.
-"""
 
 import cv2
 import socket
@@ -24,17 +7,15 @@ import time
 import numpy as np
 from ultralytics import YOLO
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
+
 
 MODEL_PATH   = "yolov8m.pt"
 CONFIDENCE   = 0.3
 IOU          = 0.4
-GROUND_IP    = "127.0.0.1"   # IP of ground station (localhost for same machine)
-GROUND_PORT  = 5005          # UDP port — must match receiver.py
-JPEG_QUALITY = 60            # JPEG compression quality (lower = faster stream)
-MAX_UDP_SIZE = 65000         # Max safe UDP packet size in bytes
+GROUND_IP    = "127.0.0.1"   
+GROUND_PORT  = 5005          
+JPEG_QUALITY = 60            
+MAX_UDP_SIZE = 65000        
 
 TARGET_CLASSES = {
     0: "Human",
@@ -43,14 +24,12 @@ TARGET_CLASSES = {
 }
 
 CLASS_COLORS = {
-    0: (50, 205, 50),    # Human  → green
-    2: (0, 165, 255),    # Car    → orange
-    7: (255, 50, 50),    # Truck  → red
+    0: (50, 205, 50),    
+    2: (0, 165, 255),    
+    7: (255, 50, 50),    
 }
 
-# ─────────────────────────────────────────────
-# ARGUMENT PARSER
-# ─────────────────────────────────────────────
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Drone Streamer — aerial_detection_system")
@@ -67,9 +46,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# ─────────────────────────────────────────────
-# DRAW DETECTIONS
-# ─────────────────────────────────────────────
+
 
 def draw_detections(frame, results):
     counts = {0: 0, 2: 0, 7: 0}
@@ -111,9 +88,7 @@ def draw_detections(frame, results):
     return frame, counts
 
 
-# ─────────────────────────────────────────────
-# DRAW DRONE HUD (shown on streamed frame)
-# ─────────────────────────────────────────────
+
 
 def draw_drone_hud(frame, fps, counts, frame_number):
     h, w = frame.shape[:2]
@@ -140,7 +115,7 @@ def draw_drone_hud(frame, fps, counts, frame_number):
     cv2.putText(frame, f"Trucks  : {counts[7]}", (18, 133),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 50, 50), 1, cv2.LINE_AA)
 
-    # DRONE tag top-right
+   
     cv2.rectangle(frame, (w - 110, 8), (w - 8, 35), (30, 30, 180), -1)
     cv2.putText(frame, "DRONE TX", (w - 105, 27),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
@@ -148,9 +123,7 @@ def draw_drone_hud(frame, fps, counts, frame_number):
     return frame
 
 
-# ─────────────────────────────────────────────
-# UDP SENDER — splits large frames into chunks
-# ─────────────────────────────────────────────
+
 
 def send_frame_udp(sock, frame, address):
     """
@@ -158,7 +131,7 @@ def send_frame_udp(sock, frame, address):
     Splits into chunks if frame is too large for one UDP packet.
     Each chunk has a small header: [frame_id (4 bytes)] [chunk_index (2 bytes)] [total_chunks (2 bytes)]
     """
-    # Encode frame to JPEG bytes
+    
     encode_params = [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
     _, buffer = cv2.imencode('.jpg', frame, encode_params)
     data = buffer.tobytes()
@@ -171,7 +144,7 @@ def send_frame_udp(sock, frame, address):
     frame_id = int(time.time() * 1000) % (2**32)
 
     for idx, chunk in enumerate(chunks):
-        # Header: frame_id (4B) + chunk_index (2B) + total_chunks (2B) = 8 bytes
+      
         header = struct.pack("IHH", frame_id, idx, total_chunks)
         packet = header + chunk
         try:
@@ -180,14 +153,12 @@ def send_frame_udp(sock, frame, address):
             print(f"[WARN] UDP send error: {e}")
 
 
-# ─────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────
+
 
 def main():
     args = parse_args()
 
-    # Load model
+    
     if not args.no_detect:
         print(f"[DRONE] Loading model: {MODEL_PATH}")
         model = YOLO(MODEL_PATH)
@@ -196,7 +167,7 @@ def main():
         model = None
         print(f"[DRONE] Detection disabled — streaming raw video only.")
 
-    # Open video source
+    
     source = args.source
     if isinstance(source, str) and source.isdigit():
         source = int(source)
@@ -210,9 +181,9 @@ def main():
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     print(f"[DRONE] Video opened: {w}x{h}")
 
-    # Setup UDP socket
+    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576)  # 1MB send buffer
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576)  
     ground_address = (args.ip, args.port)
     print(f"[DRONE] Streaming to {args.ip}:{args.port}")
     print(f"[DRONE] Make sure receiver.py is running in another terminal!")
@@ -227,7 +198,7 @@ def main():
         ret, frame = cap.read()
         if not ret:
             print("[DRONE] Video ended. Looping...")
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # loop video
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  
             continue
 
         frame_number += 1
@@ -235,7 +206,7 @@ def main():
 
         counts = {0: 0, 2: 0, 7: 0}
 
-        # Run detection
+        
         if model is not None:
             results = model.predict(
                 source=frame,
@@ -246,19 +217,19 @@ def main():
             )
             frame, counts = draw_detections(frame, results)
 
-        # FPS calculation
+       
         if fps_counter >= 10:
             fps = fps_counter / (time.time() - fps_timer)
             fps_timer = time.time()
             fps_counter = 0
 
-        # Draw HUD on frame
+       
         frame = draw_drone_hud(frame, fps, counts, frame_number)
 
-        # Send frame over UDP
+        
         send_frame_udp(sock, frame, ground_address)
 
-        # Show local preview on drone side (optional)
+       
         cv2.imshow("Drone Side — Transmitting", frame)
 
         key = cv2.waitKey(1) & 0xFF
