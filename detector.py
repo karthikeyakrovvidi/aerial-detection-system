@@ -22,9 +22,7 @@ CLASS_COLORS = {
     7: (255, 50, 50),     # Truck  → blue
 }
 
-# ─────────────────────────────────────────────
-# ARGUMENT PARSER
-# ─────────────────────────────────────────────
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Aerial Object Detector — YOLOv8m")
@@ -37,9 +35,7 @@ def parse_args():
     return parser.parse_args()
 
 
-# ─────────────────────────────────────────────
-# DRAW BOUNDING BOXES
-# ─────────────────────────────────────────────
+
 
 def draw_detections(frame, results, show_all=False):
     counts = {0: 0, 2: 0, 7: 0}
@@ -85,9 +81,7 @@ def draw_detections(frame, results, show_all=False):
     return frame, counts
 
 
-# ─────────────────────────────────────────────
-# DRAW HUD OVERLAY
-# ─────────────────────────────────────────────
+
 
 def draw_hud(frame, fps, counts, frame_number):
     h, w = frame.shape[:2]
@@ -121,9 +115,6 @@ def draw_hud(frame, fps, counts, frame_number):
     return frame
 
 
-# ─────────────────────────────────────────────
-# MAIN LOOP
-# ─────────────────────────────────────────────
 
 def main():
     args = parse_args()
