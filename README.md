@@ -13,7 +13,7 @@ confidence scores and live counts.
 |--------|-------|-----------|
 | Person | Human | 🟢 Green  |
 | Car    | Car   | 🟠 Orange |
-| Truck  | Truck | 🔴 Red    |
+| Truck  | Truck | 🔵 Blue   |
 
 ## 🗂️ Project Files
 | File | Description |
